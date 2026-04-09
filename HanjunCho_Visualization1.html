@@ -38,17 +38,17 @@
   const tooltip = d3.select("#tooltip");
 
   let data_2015_16 = []
-  await d3.csv("food_security_2015_16.csv").then(data => {
+  await d3.csv("Food_security_2015.csv").then(data => {
     data_2015_16 = data;
   });
 
   let data_2017_18 = []
-  await d3.csv("food_security_2017_18.csv").then(data => {
+  await d3.csv("Food_security_2017.csv").then(data => {
     data_2017_18 = data;
   });
 
   let data_2021_23 = []
-  await d3.csv("food_security_2021_23.csv").then(data => {
+  await d3.csv("Food_security_2021.csv").then(data => {
     data_2021_23 = data;
   });
 
