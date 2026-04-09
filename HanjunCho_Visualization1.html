@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<div id="container"></div>
+<div id="container">
+    <div id="tooltip" style="font-size: 12px; position: absolute; background: #fff; border: 1px solid #ccc; padding: 6px; pointer-events: none; opacity: 0;"></div>
+</div>
 <script type="module">
   import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
@@ -33,6 +35,7 @@
   }
 
   const years = ["2015-2016", "2017-2018", "2021-2023"];
+  const tooltip = d3.select("#tooltip");
 
   let data_2015_16 = []
   await d3.csv("food_security_2015_16.csv").then(data => {
@@ -97,7 +100,22 @@
     .attr("y", d => y(d.value))
     .attr("width", x1.bandwidth())
     .attr("height", d => height - marginBottom - y(d.value))
-    .attr("fill", d => color(d.year));
+    .attr("fill", d => color(d.year))
+    .on("mouseover", function(event, d) {
+      tooltip
+      .style("opacity", 1)
+      .html(`Household Worry: ${FSD032A_categories[d.FSD032A]}<br>Year: ${d.year}<br>Total # Months of Food Security Benefits Received in Past 12 Months: ${d.value}`);
+      d3.select(this).attr("fill", d3.color(color(d.year)).darker(0.5));
+    })
+    .on("mousemove", function(event) {
+      tooltip
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY + 10) + "px");
+    })
+    .on("mouseout", function(event, d) {
+      tooltip.style("opacity", 0);
+      d3.select(this).attr("fill", color(d.year));
+    });
 
   const title = svg.append("text")
     .attr("x", width / 2)
