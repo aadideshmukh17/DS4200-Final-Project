@@ -14,6 +14,6 @@ document.body.insertAdjacentHTML('afterbegin', `
            onmouseout="this.style.backgroundColor='transparent';this.style.color='#ccc'">Bar Chart</a>
         <a href="HanjunCho_Visualization2.html" style="color:#ccc; text-decoration:none; font-family:Arial; font-size:14px; padding:6px 12px; border-radius:3px;"
            onmouseover="this.style.backgroundColor='#c4122d';this.style.color='white'"
-           onmouseout="this.style.backgroundColor='transparent';this.style.color='#ccc'">Pie Chart</a>
+           onmouseout="this.style.backgroundColor='transparent';this.style.color='#ccc'">Line Chart</a>
     </nav>
 `);
