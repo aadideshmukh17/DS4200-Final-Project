@@ -6,9 +6,9 @@ document.body.insertAdjacentHTML('afterbegin', `
         <a href="Aadi-boxplot.html" style="color:#ccc; text-decoration:none; font-family:Arial; font-size:14px; padding:6px 12px; border-radius:3px;"
            onmouseover="this.style.backgroundColor='#c4122d';this.style.color='white'"
            onmouseout="this.style.backgroundColor='transparent';this.style.color='#ccc'">Box Plot</a>
-        <a href="Aadi-scatterplot.html" style="color:#ccc; text-decoration:none; font-family:Arial; font-size:14px; padding:6px 12px; border-radius:3px;"
+        <a href="Aadi-densityplot.html" style="color:#ccc; text-decoration:none; font-family:Arial; font-size:14px; padding:6px 12px; border-radius:3px;"
            onmouseover="this.style.backgroundColor='#c4122d';this.style.color='white'"
-           onmouseout="this.style.backgroundColor='transparent';this.style.color='#ccc'">Scatter Plot</a>
+           onmouseout="this.style.backgroundColor='transparent';this.style.color='#ccc'">Density Plot</a>
         <a href="HanjunCho_Visualization1.html" style="color:#ccc; text-decoration:none; font-family:Arial; font-size:14px; padding:6px 12px; border-radius:3px;"
            onmouseover="this.style.backgroundColor='#c4122d';this.style.color='white'"
            onmouseout="this.style.backgroundColor='transparent';this.style.color='#ccc'">Bar Chart</a>
