@@ -9,7 +9,7 @@ const currentPage = window.location.pathname.split("/").pop();
 const takeawayText = takeaways[currentPage] || "";
 
 document.body.insertAdjacentHTML('afterbegin', `
-    <nav style="background-color:#1a1a2e; padding:12px 20px; display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; justify-content:center;">
+    <nav style="background-color:#1a1a2e; padding:12px 20px; display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; justify-content:center; width:100%;">
         <a href="index.html" style="color:#ccc; text-decoration:none; font-family:Arial; font-size:14px; padding:6px 12px; border-radius:3px; transition:background 0.2s;"
            onmouseover="this.style.backgroundColor='#c4122d';this.style.color='white'"
            onmouseout="this.style.backgroundColor='transparent';this.style.color='#ccc'">Home</a>
@@ -31,3 +31,7 @@ document.body.insertAdjacentHTML('afterbegin', `
         ${takeawayText}
     </div>` : ""}
 `);
+
+document.body.style.display = "flex";
+document.body.style.flexDirection = "column";
+document.body.style.alignItems = "center";
