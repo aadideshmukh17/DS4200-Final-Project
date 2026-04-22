@@ -54,33 +54,14 @@
   // Chart dimensions — generous margins so labels don't get clipped
   const width        = 860;
   const height       = 500;
-  const marginTop    = 50;
-  const marginRight  = 130;  // room for right-side labels
+  const marginTop    = 10;
+  const marginRight  = 130;
   const marginBottom = 20;
-  const marginLeft   = 110;  // room for left-side label
+  const marginLeft   = 110;
 
   const svg = d3.create("svg")
     .attr("width", width)
     .attr("height", height);
-
-  // Stage labels
-  const stageLabels = [
-    { text: "Entry",                     x: marginLeft + 10 },
-    { text: "Screen 1: Food Worry",      x: marginLeft + 180 },
-    { text: "Screen 2: Severe Hardship", x: marginLeft + 370 },
-    { text: "Outcome",                   x: width - marginRight - 10 },
-  ];
-
-  stageLabels.forEach(s => {
-    svg.append("text")
-      .attr("x", s.x)
-      .attr("y", 18)
-      .attr("text-anchor", "middle")
-      .attr("font-size", 11)
-      .attr("fill", "#999")
-      .attr("font-family", "Arial, sans-serif")
-      .text(s.text);
-  });
 
   const g = svg.append("g").attr("transform", `translate(${marginLeft},${marginTop})`);
 
