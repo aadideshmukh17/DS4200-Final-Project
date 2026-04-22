@@ -1,14 +1,10 @@
 <!DOCTYPE html>
 <head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </head>
 <body>
 <div id="container">
     <h3>Distribution of Household Food Security Status Across Survey Years</h3>
-    <div id="year-selector" style="display:flex; gap:8px; margin-bottom:1rem;"></div>
-    <div id="legend" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:1rem; font-size:13px;"></div>
     <div id="fsdChart"></div>
-    <p id="chart-subtitle" style="font-size:13px; color:gray;"></p>
     <div id="tooltip" style="position:absolute; opacity:0; background:white; border:0.5px solid #ccc; border-radius:4px; padding:6px 10px; font-size:13px; pointer-events:none;"></div>
 </div>
 <script type="module">
@@ -19,135 +15,178 @@
 
     function prepareFSDData(data_2015_16, data_2017_18, data_2021_23) {
         const combined = [
-            ...data_2015_16.map(d => ({ year: "2015-2016", FSDHH: d.FSDHH})),
-            ...data_2017_18.map(d => ({ year: "2017-2018", FSDHH: d.FSDHH})),
-            ...data_2021_23.map(d => ({ year: "2021-2023", FSDHH: d.FSDAD})),
+            ...data_2015_16.map(d => ({ year: "2015-2016", FSDHH: d.FSDHH })),
+            ...data_2017_18.map(d => ({ year: "2017-2018", FSDHH: d.FSDHH })),
+            ...data_2021_23.map(d => ({ year: "2021-2023", FSDHH: d.FSDAD ?? d.FSDHH })),
         ];
-        const cleaned = combined.filter(d => d.FSDHH !== "");
-        return cleaned;
+        // Filter out blank, missing, or invalid codes
+        const validCodes = new Set(["1.0", "2.0", "3.0", "4.0", "1", "2", "3", "4"]);
+        return combined.filter(d => d.FSDHH && validCodes.has(String(d.FSDHH).trim()));
     }
 
     const years = ["2015-2016", "2017-2018", "2021-2023"];
 
-    let data_2015_16 = []
-    await d3.csv("Food_security_2015.csv").then(data => {
-        data_2015_16 = data;
-    });
+    let data_2015_16 = [];
+    await d3.csv("Food_security_2015.csv").then(data => { data_2015_16 = data; });
 
-    let data_2017_18 = []
-    await d3.csv("Food_security_2017.csv").then(data => {
-        data_2017_18 = data;
-    });
+    let data_2017_18 = [];
+    await d3.csv("Food_security_2017.csv").then(data => { data_2017_18 = data; });
 
-    let data_2021_23 = []
-    await d3.csv("Food_security_2021.csv").then(data => {
-        data_2021_23 = data;
-    });
+    let data_2021_23 = [];
+    await d3.csv("Food_security_2021.csv").then(data => { data_2021_23 = data; });
 
     let data = prepareFSDData(data_2015_16, data_2017_18, data_2021_23);
+
+    // Normalize keys: some CSVs may store "1" instead of "1.0"
+    data = data.map(d => ({
+        ...d,
+        FSDHH: parseFloat(d.FSDHH).toFixed(1)
+    }));
+
     const FSDHH_categories = {
         "1.0": "Full Food Security",
         "2.0": "Marginal Food Security",
         "3.0": "Low Food Security",
         "4.0": "Very Low Food Security"
-    }
+    };
 
     function getCounts(year) {
-      const subset = data.filter(d => d.year === year);
-      const counts = {};
-      Object.keys(FSDHH_categories).forEach(k => counts[k] = 0);
-      subset.forEach(d => {
-        if (counts[d.FSDHH] !== undefined) counts[d.FSDHH]++;
-      });
-      return counts;
+        const subset = data.filter(d => d.year === year);
+        const counts = {};
+        Object.keys(FSDHH_categories).forEach(k => counts[k] = 0);
+        subset.forEach(d => {
+            if (counts[d.FSDHH] !== undefined) counts[d.FSDHH]++;
+        });
+        return counts;
     }
 
-    function buildLegend(counts, total) {
-        const legend = document.getElementById("legend");
-        legend.innerHTML = "";
+    function renderChart() {
+        // Compute pct for each (category, year) combo
+        const seriesData = {};
+        Object.keys(FSDHH_categories).forEach(k => seriesData[k] = []);
+
+        years.forEach(year => {
+            const counts = getCounts(year);
+            const total = Object.values(counts).reduce((a, b) => a + b, 0);
+            Object.keys(FSDHH_categories).forEach(k => {
+                seriesData[k].push(total > 0 ? (counts[k] / total) * 100 : 0);
+            });
+        });
+
+        d3.select("#fsdChart").selectAll("*").remove();
+
+        const width = 620;
+        const height = 420;
+        const marginTop = 30;
+        const marginRight = 180;
+        const marginBottom = 50;
+        const marginLeft = 65;
+
+        const x = d3.scalePoint()
+            .domain(years)
+            .range([marginLeft, width - marginRight])
+            .padding(0.5);
+
+        const y = d3.scaleLinear()
+            .domain([0, 100])
+            .range([height - marginBottom, marginTop]);
+
+        const svg = d3.select("#fsdChart")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        // X axis
+        svg.append("g")
+            .attr("transform", `translate(0,${height - marginBottom})`)
+            .call(d3.axisBottom(x));
+
+        // X axis label
+        svg.append("text")
+            .attr("x", (marginLeft + width - marginRight) / 2)
+            .attr("y", height - 8)
+            .attr("text-anchor", "middle")
+            .attr("font-size", 12)
+            .text("Survey Year");
+
+        // Y axis
+        svg.append("g")
+            .attr("transform", `translate(${marginLeft},0)`)
+            .call(d3.axisLeft(y).tickFormat(d => d + "%"));
+
+        // Y axis label
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -(marginTop + height - marginBottom) / 2)
+            .attr("y", 15)
+            .attr("text-anchor", "middle")
+            .attr("font-size", 12)
+            .text("% of Respondents");
+
+        const line = d3.line()
+            .x((_, i) => x(years[i]))
+            .y(d => y(d));
+
+        const color = d3.scaleOrdinal()
+            .domain(Object.keys(FSDHH_categories))
+            .range(COLORS);
+
+        // Draw a line + dots per category
+        Object.entries(FSDHH_categories).forEach(([key, label]) => {
+            const values = seriesData[key];
+
+            // Line
+            svg.append("path")
+                .datum(values)
+                .attr("fill", "none")
+                .attr("stroke", color(key))
+                .attr("stroke-width", 2.5)
+                .attr("d", line);
+
+            // Dots
+            svg.selectAll(`.dot-${key.replace(".", "_")}`)
+                .data(values)
+                .join("circle")
+                .attr("cx", (_, i) => x(years[i]))
+                .attr("cy", d => y(d))
+                .attr("r", 5)
+                .attr("fill", color(key))
+                .on("mouseover", function(event, d) {
+                    tooltip.style("opacity", 1)
+                        .html(`<strong>${label}</strong><br>${years[seriesData[key].indexOf(d)]}<br>${d.toFixed(1)}%`)
+                        .style("left", `${event.pageX + 10}px`)
+                        .style("top", `${event.pageY - 28}px`);
+                    d3.select(this).attr("r", 7);
+                })
+                .on("mousemove", function(event) {
+                    tooltip
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY + 10) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                    d3.select(this).attr("r", 5);
+                });
+        });
+
+        // Legend
+        const legend = svg.append("g")
+            .attr("transform", `translate(${width - marginRight + 20}, ${marginTop + 20})`);
+
+        legend.append("text")
+            .attr("y", -8)
+            .attr("font-size", 13)
+            .attr("font-weight", "bold")
+            .text("Category");
+
         Object.entries(FSDHH_categories).forEach(([key, label], i) => {
-            const pct = total > 0 ? ((counts[key] / total) * 100).toFixed(1) : "0.0";
-            legend.innerHTML += `<span style="display:flex;align-items:center;gap:5px;">
-                <span style="width:10px;height:10px;border-radius:2px;background:${COLORS[i]};"></span>
-                ${label}: ${pct}%
-            </span>`;
+            const row = legend.append("g").attr("transform", `translate(0, ${i * 24})`);
+            row.append("rect").attr("width", 13).attr("height", 13).attr("fill", color(key));
+            row.append("text").attr("x", 18).attr("y", 11).attr("font-size", 11).text(label);
         });
     }
-    
-    function renderChart(year) {
-      const counts = getCounts(year);
-      const labels = Object.values(FSDHH_categories);
-      const values = Object.keys(FSDHH_categories).map(k => counts[k]);
-      const total = values.reduce((a, b) => a + b, 0);
-    
-      buildLegend(counts, total);
-      document.getElementById("chart-subtitle").textContent =
-        `${year}: ${total.toLocaleString()} respondents`;
-    
-      // Clear previous chart
-      d3.select("#fsdChart").selectAll("*").remove();
-    
-      const width = 400;
-      const height = 400;
-      const radius = Math.min(width, height) / 2;
-    
-      const svg = d3.select("#fsdChart")
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .append("g")
-        .attr("transform", `translate(${width / 2}, ${height / 2})`);
-    
-      const color = d3.scaleOrdinal()
-        .domain(labels)
-        .range(COLORS);
-    
-      const pie = d3.pie().value(d => d.value).sort(null);
-      const arc = d3.arc().innerRadius(0).outerRadius(radius);
-    
-      const pieData = pie(Object.keys(FSDHH_categories).map((k, i) => ({
-        key: k,
-        label: labels[i],
-        value: counts[k]
-      })));
-    
-      svg.selectAll("path")
-        .data(pieData)
-        .join("path")
-        .attr("d", arc)
-        .attr("fill", d => color(d.data.label))
-        .attr("stroke", "#fff")
-        .attr("stroke-width", 2)
-        .on("mouseover", function(event, d) {
-          const pct = ((d.data.value / total) * 100).toFixed(1);
-          tooltip.style("opacity", 1)
-            .html(`${d.data.label}<br>${d.data.value.toLocaleString()} (${pct}%)`)
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY - 28}px`);
-          d3.select(this).attr("fill", d3.color(color(d.data.label)).darker(0.5));
-        })
-        .on("mousemove", function(event) {
-            tooltip.style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY + 10) + "px");
-        })
-        .on("mouseout", function(event, d) {
-        tooltip.style("opacity", 0);
-          d3.select(this).attr("fill", color(d.data.label));
-        });
-    
-    }
 
-    const selector = document.getElementById("year-selector");
-    years.forEach(year => {
-        const btn = document.createElement("button");
-        btn.className = "year-btn";
-        btn.dataset.year = year;
-        btn.textContent = year;
-        btn.onclick = () => renderChart(year);
-        selector.appendChild(btn);
-    });
-
-    renderChart(years[0]);
+    renderChart();
 </script>
 
 <script src="nav.js"></script>
