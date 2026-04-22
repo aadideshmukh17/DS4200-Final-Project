@@ -6,6 +6,10 @@
   import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
   function prepareFSDData(data_2015_16, data_2017_18, data_2021_23) {
+    const total_15_16 = Object.values(data_2015_16).reduce((sum, item) => sum + (item.FSD795 || 0), 0);
+    const total_17_18 = Object.values(data_2017_18).reduce((sum, item) => sum + (item.FSD795 || 0), 0);
+    const total_21_23 = Object.values(data_2021_23).reduce((sum, item) => sum + (item.FSD795 || 0), 0);
+
     const combined = [
       ...data_2015_16.map(d => ({ year: "2015-2016", FSD032A: d.FSD032A, FSD795: d.FSD795 })),
       ...data_2017_18.map(d => ({ year: "2017-2018", FSD032A: d.FSD032A, FSD795: d.FSD795 })),
@@ -28,10 +32,19 @@
       yearMap.map(([year, count]) => ({
         FSD032A: fsd032a,
         year: year,
-        value: count
+        pct: count
       }))
     );
-    return aggregated;
+
+    // Sum the values per year from the already-aggregated data
+    const yearTotals = d3.rollup(aggregated, v => d3.sum(v, d => d.pct), d => d.year);
+
+    // Then convert to percentages
+    const aggregatedPct = aggregated.map(d => ({
+      ...d,
+      value: (d.pct / yearTotals.get(d.year)) * 100
+    }));
+    return aggregatedPct;
   }
 
   const years = ["2015-2016", "2017-2018", "2021-2023"];
@@ -104,7 +117,7 @@
     .on("mouseover", function(event, d) {
       tooltip
       .style("opacity", 1)
-      .html(`Household Worry: ${FSD032A_categories[d.FSD032A]}<br>Year: ${d.year}<br>Total # Months of Food Security Benefits Received in Past 12 Months: ${d.value}`);
+      .html(`Household Worry: ${FSD032A_categories[d.FSD032A]}<br>Year: ${d.year}<br>Total # Months of Food Security Benefits Received in Past 12 Months: ${d.value.toFixed(2)}%`);
       d3.select(this).attr("fill", d3.color(color(d.year)).darker(0.5));
     })
     .on("mousemove", function(event) {
@@ -147,7 +160,7 @@
     .attr("y", 15)
     .attr("text-anchor", "middle")
     .attr("font-size", 14)
-    .text("Total # of Months of Food Security Benefits Received in the Past 12 Months");
+    .text("% of Total Food Security Benefit Recipts Received in Past 12 Months");
 
   const legend = svg.append("g")
     .attr("transform", `translate(${width - marginRight + 20}, ${marginTop + 30})`);
